@@ -168,7 +168,7 @@
             if (loaded) {// call UDF for loaded
               
               $this.data("jnavloaded", loaded); // cache to run on history pop
-              loaded.call($this, data);
+              loaded.call($this, data, options.trigger); // return options.trigger for further work (set classes, running other handlers)
               
             }
             
