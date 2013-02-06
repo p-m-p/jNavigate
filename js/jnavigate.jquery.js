@@ -33,7 +33,10 @@
       
       history.replaceState(
           createHistoryState(
-            $.extend({selector: selector}, options)
+            $.extend({
+                trigger_path: false,
+                selector: selector
+            }, options)
           )
         ,  ""
         ,  location.href
@@ -49,7 +52,7 @@
       // add a reference to the content area for event data
       options.jNavigateContainer = $this;
       // bind event handlers
-      $(options.extTrigger).bind("click", options, transport);
+      $(options.extTrigger).live("click", options, transport);
       $this.delegate(options.intTrigger, "click", options, transport);
       // cache the trigger selectors
       $this.data("jnavigate-triggers", {
@@ -165,6 +168,19 @@
               
             }
             
+            
+            
+            // If is initated by click
+            if(typeof options.trigger !== 'undefined' && options.trigger !== false) {
+                options.trigger_path = options.trigger.getDomPath(true);
+            // If is initated by history
+            } else if (options.trigger_path !== false){
+                options.trigger  = $(options.trigger_path);
+            // If we goes to start page
+            } else {
+                options.trigger = false;
+            } 
+
             if (loaded) {// call UDF for loaded
               
               $this.data("jnavloaded", loaded); // cache to run on history pop
@@ -177,17 +193,17 @@
               ((options.httpmethod || "GET").toUpperCase() === "GET")) {
                 
               // don't push state if refresh or history pop
-              if (locationCache === options.url) {
+              if (location.href === options.url) { // Fixed location check
                   return;
               }
               
-              history.pushState(
-                  createHistoryState(
-                    $.extend(options, {selector: selector})
-                  )
-                , ""
-                ,  options.url
-              );
+                    history.pushState(
+                        createHistoryState(
+                          $.extend(options, {selector: selector})
+                        )
+                      , ""
+                      ,  options.url
+                    );
               
             }
             
@@ -224,7 +240,7 @@
         
       if (triggers) {
         $this.undelegate(triggers.intTrigger, "click", transport);
-        $(triggers.extTrigger).unbind("click", transport);
+        $(triggers.extTrigger).die("click", transport);
         $.removeData($this, "jnavigate-triggers");
       }
       
@@ -346,7 +362,7 @@
         
         locationCache = ev.state.url;
         methods.navigate.call($(ev.state.selector), ev.state);
-        
+       
       }
       
     }, false);
@@ -372,3 +388,33 @@
   };
     
 })(jQuery);
+
+(function( $ ){
+    var getStringForElement = function (el) {
+        var string = el.tagName.toLowerCase();
+
+        if (el.id) {
+            string += "#" + el.id;
+        }
+        if (el.className) {
+            string += "." + el.className.replace(/ /g, '.');
+        }
+
+        return string;
+    };
+
+    $.fn.getDomPath = function(string) {
+        if (typeof(string) == "undefined") {
+            string = true;
+        }
+
+        var p = [],
+            el = $(this).first();
+        el.parents().not('html').each(function() {
+            p.push(getStringForElement(this));
+        });
+        p.reverse();
+        p.push(getStringForElement(el[0]));
+        return string ? p.join(" > ") : p;
+    };
+})( jQuery );
